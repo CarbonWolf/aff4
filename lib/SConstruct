@@ -1,0 +1,53 @@
+Import("env")
+import pdb
+import SCons.Util, SCons.Subst
+import SconsUtils.utils as utils
+
+nenv = env.Clone()
+
+nenv.Append(CFLAGS = "-include lib/config.h -Ilibraptor/ ")
+
+source_files = """
+#lib/class.c #lib/talloc.c
+#lib/misc.c #lib/zip.c #lib/stringio.c #lib/resolver.c
+#lib/rdf.c  #lib/image.c #lib/map.c
+#lib/encode.c #lib/queue.c
+#lib/graph.c #lib/error.c
+#libreplace/replace.c
+"""
+
+## Optional support for EWF and AFF1 volumes
+if utils.HEADERS.get("HAVE_EWF"):
+    source_files += "  #lib/ewfvolume.c "
+
+if utils.HEADERS.get("HAVE_OPENSSL"):
+    source_files += "  #lib/encrypt.c "
+
+uuid_files = """
+#uuid/clear.c    #uuid/copy.c      #uuid/gen_uuid_nt.c  #uuid/pack.c
+#uuid/unparse.c
+#uuid/compare.c  #uuid/gen_uuid.c  #uuid/isnull.c       #uuid/parse.c
+#uuid/unpack.c   #uuid/uuid_time.c
+"""
+
+## We compile these statically into our library to ensure users dont
+## need tdb as a dependency and also to ensure we can port tdb for
+## windows.
+tdb_files = """
+#libtdb/dump.c   #libtdb/freelist.c       #libtdb/io.c    #libtdb/open.c
+#libtdb/transaction.c
+#libtdb/error.c  #libtdb/freelistcheck.c  #libtdb/lock.c  #libtdb/tdb.c
+#libtdb/traverse.c
+"""
+
+nenv.Append(CPPFLAGS = ['-Ilibreplace/'], CFLAGS=" -DNO_CONFIG_H")
+env.libaff4_sources = Split(source_files +
+                            uuid_files +
+                            tdb_files) + env.libraptor_objs
+
+env.libaff4_so = library = nenv.VersionedSharedLibrary("aff4", '0', env.libaff4_sources)
+
+env.installed_libaff4_so = nenv.InstallVersionedSharedLibrary("${prefix}/lib/", library)
+utils.install_target = nenv.Alias('install', '${prefix}')
+
+utils.libaff4_static_lib = nenv.StaticLibrary('aff4', env.libaff4_sources)
