@@ -1,0 +1,19 @@
+import SconsUtils.utils as utils
+import pdb
+
+Import("env")
+
+nenv = env.Clone()
+
+common_files = env.Object('common','common.c')
+
+programs = """aff4imager.c raid_reconstructor.c"""
+
+for prog in Split(programs):
+    prog = nenv.Program([prog] + common_files,
+                       LIBS=env.libaff4_so, LIBPATH="#lib/")
+    nenv.Install("$prefix/bin/", prog)
+
+if 0 and utils.HEADERS.get("HAVE_FUSE_H"):
+    nenv.Program("aff4fuse", ['affuse.c'], LIBS=[env.libaff4_so, 'fuse'],)
+    nenv.Install("$prefix/bin/", Split("aff4fuse"))
