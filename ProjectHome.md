@@ -1,0 +1,1 @@
+The Advance Forensic File Format is an open format for the storage and processing of digital forensic evidence.
